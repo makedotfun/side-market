@@ -1,0 +1,11 @@
+{
+  "name": "make.fun side market",
+  "logo": "https://raw.githubusercontent.com/makedotfun/.github/main/profile/assets/icon-512.png",
+  "description": "make.fun side market: per-entry YES/NO prediction markets in USDC, priced by a mass-weighted LMSR, with scratches, halts, a disputed resolution and void at marks",
+  "project_url": "https://make.fun",
+  "contacts": ["email:security@make.fun"],
+  "policy": "Report vulnerabilities privately to security@make.fun, never in a public issue or post.",
+  "preferred_languages": ["en"],
+  "source_code": "https://github.com/makedotfun/side-market",
+  "version": "0.1.0"
+}

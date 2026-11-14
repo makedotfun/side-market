@@ -1,0 +1,3969 @@
+{
+  "address": "D5Th7ozaTzvj4v5GMrLkMH6sef3hmZAqmrNAugmLsGiH",
+  "metadata": {
+    "name": "side_market",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "make.fun side market: per-entry YES/NO prediction markets in USDC, priced by a mass-weighted LMSR in Q64.64, with scratches, halts, a disputed resolution and void at marks"
+  },
+  "instructions": [
+    {
+      "name": "add_outcome",
+      "docs": [
+        "The operator lists an entry, its mass split from FIELD so C never rises."
+      ],
+      "discriminator": [
+        162,
+        222,
+        202,
+        185,
+        176,
+        222,
+        248,
+        52
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "docs": [
+            "The Config's operator: pays the market's growth."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "outcome_id",
+          "type": "u16"
+        },
+        {
+          "name": "mass_ppm",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "close_market",
+      "docs": [
+        "The operator closes a settled market: surplus and fees to the house, rent to its payer."
+      ],
+      "discriminator": [
+        88,
+        154,
+        248,
+        186,
+        48,
+        14,
+        123,
+        244
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "docs": [
+            "Closed, its rent to its payer."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rent_to",
+          "docs": [
+            "rent."
+          ],
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "PDA [\"vault\", market]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fees",
+          "docs": [
+            "PDA [\"fees\", market]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "house_token",
+          "docs": [
+            "A token account of the Config's house: takes the surplus and the fees."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "finalize",
+      "docs": [
+        "Anyone, after the dispute delay: the proposed winner stands."
+      ],
+      "discriminator": [
+        171,
+        61,
+        218,
+        56,
+        127,
+        115,
+        12,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "The market's vault (re-derived): D6 in the winning world is asserted from its balance."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "halt",
+      "docs": [
+        "The operator or the guardian halts an Open market, freezing its marks."
+      ],
+      "discriminator": [
+        24,
+        156,
+        8,
+        121,
+        65,
+        3,
+        5,
+        82
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The Config's operator or guardian."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "init_config",
+      "docs": [
+        "The program's upgrade authority creates the Config at [\"config\"], once, with its roles,",
+        "the mint (classic SPL Token, 6 decimals), the escrow program, the dispute delay and the fee",
+        "cap."
+      ],
+      "discriminator": [
+        23,
+        235,
+        115,
+        232,
+        168,
+        96,
+        1,
+        231
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The program's upgrade authority (its ProgramData's upgrade_authority_address); pays the",
+            "rent."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "PDA [\"config\"]: `init`, so it is created once."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "The one mint every market trades in: owned by the classic Token program (Account<Mint>",
+            "refuses a Token-2022 mint by its owner), 6 decimals."
+          ]
+        },
+        {
+          "name": "program_data",
+          "docs": [
+            "This program's ProgramData account, [\"<program id>\"] under the upgradeable loader."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  179,
+                  112,
+                  191,
+                  41,
+                  193,
+                  85,
+                  215,
+                  38,
+                  168,
+                  243,
+                  92,
+                  160,
+                  210,
+                  98,
+                  237,
+                  28,
+                  172,
+                  61,
+                  200,
+                  244,
+                  136,
+                  230,
+                  44,
+                  142,
+                  183,
+                  26,
+                  137,
+                  43,
+                  189,
+                  104,
+                  190,
+                  182
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                2,
+                168,
+                246,
+                145,
+                78,
+                136,
+                161,
+                176,
+                226,
+                16,
+                21,
+                62,
+                247,
+                99,
+                174,
+                43,
+                0,
+                194,
+                185,
+                61,
+                22,
+                193,
+                36,
+                210,
+                192,
+                83,
+                122,
+                16,
+                4,
+                128,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "ConfigParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "open_market",
+      "docs": [
+        "The operator opens the market for `competition_id` (NONE and FIELD only), the house",
+        "depositing ceil(b ln(1/m_floor)) + 1,000 base units into its vault."
+      ],
+      "discriminator": [
+        116,
+        19,
+        123,
+        75,
+        217,
+        244,
+        69,
+        44
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "docs": [
+            "The Config's operator: pays the rent of the market, its vault and its fees account."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "house",
+          "docs": [
+            "The Config's house: deposits the seed."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "The Config's mint (classic Token program only)."
+          ]
+        },
+        {
+          "name": "house_token",
+          "docs": [
+            "The house's token account the deposit comes from."
+          ],
+          "writable": true
+        },
+        {
+          "name": "market",
+          "docs": [
+            "PDA [\"market\", competition_id]: one market per competition."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "competition_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "token account of the mint (instructions::create_token_account)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fees",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "competition_id",
+          "type": {
+            "array": [
+              "u8",
+              16
+            ]
+          }
+        },
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "OpenMarketArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "open_ticket",
+      "docs": [
+        "The operator opens `wallet`'s ticket."
+      ],
+      "discriminator": [
+        154,
+        120,
+        166,
+        69,
+        155,
+        111,
+        27,
+        207
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "docs": [
+            "The Config's operator: pays the ticket's rent, after the server's eligibility check."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket",
+          "docs": [
+            "PDA [\"ticket\", market, wallet]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "arg",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "override_result",
+      "docs": [
+        "The arbiter replaces the proposed winner during the dispute delay."
+      ],
+      "discriminator": [
+        203,
+        9,
+        207,
+        29,
+        106,
+        228,
+        103,
+        174
+      ],
+      "accounts": [
+        {
+          "name": "arbiter",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "winner",
+          "type": "u16"
+        },
+        {
+          "name": "result_sha256",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "propose",
+      "docs": [
+        "The resolver proposes the winner and the result hash once trading has ended (never under",
+        "the guardian's halt)."
+      ],
+      "discriminator": [
+        93,
+        253,
+        82,
+        168,
+        118,
+        33,
+        102,
+        90
+      ],
+      "accounts": [
+        {
+          "name": "resolver",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow",
+          "docs": [
+            "discriminator, competition and result are checked in check_escrow); None otherwise."
+          ],
+          "optional": true
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "winner",
+          "type": "u16"
+        },
+        {
+          "name": "result_sha256",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "resume",
+      "docs": [
+        "The admin (or the operator, for its own halt) resumes a Halted market."
+      ],
+      "discriminator": [
+        1,
+        166,
+        51,
+        170,
+        127,
+        32,
+        141,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The Config's admin, or its operator for a halt that was not the guardian's."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "revoke_ticket",
+      "docs": [
+        "The operator stops (or restores) a ticket's buys; sells are never stopped."
+      ],
+      "discriminator": [
+        212,
+        187,
+        100,
+        68,
+        17,
+        176,
+        104,
+        147
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          },
+          "relations": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "ticket",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "ticket.wallet",
+                "account": "Ticket"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "revoked",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "scratch_outcome",
+      "docs": [
+        "The operator unwinds an entry at the AMM before lock_ts."
+      ],
+      "discriminator": [
+        201,
+        15,
+        254,
+        46,
+        9,
+        80,
+        106,
+        152
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "The market's vault (re-derived): D6 is asserted from its balance."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "outcome_id",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "set_config",
+      "docs": [
+        "The admin replaces every Config setting but the mint."
+      ],
+      "discriminator": [
+        108,
+        158,
+        154,
+        175,
+        212,
+        98,
+        52,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "ConfigParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_sell_until",
+      "docs": [
+        "The operator sets when the competition's result becomes public (at or after lock_ts; 0",
+        "clears it): sells outside every window land until then, never past void_after."
+      ],
+      "discriminator": [
+        129,
+        50,
+        31,
+        200,
+        206,
+        116,
+        27,
+        204
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "sell_until",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "set_windows",
+      "docs": [
+        "The operator sets the bounty and race trading windows (0, 0 closes one)."
+      ],
+      "discriminator": [
+        88,
+        201,
+        247,
+        202,
+        5,
+        85,
+        239,
+        5
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "bounty_from",
+          "type": "i64"
+        },
+        {
+          "name": "bounty_until",
+          "type": "i64"
+        },
+        {
+          "name": "race_from",
+          "type": "i64"
+        },
+        {
+          "name": "race_until",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "settle_ticket",
+      "docs": [
+        "Anyone, once Final or Void: pays a ticket to a token account its wallet owns (its",
+        "associated token account, created when missing, or any other of the mint) and closes it."
+      ],
+      "discriminator": [
+        201,
+        80,
+        119,
+        145,
+        208,
+        184,
+        168,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Anyone: pays the wallet's associated token account when it is created here."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          },
+          "relations": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "PDA [\"vault\", market]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "wallet"
+        },
+        {
+          "name": "wallet_token",
+          "docs": [
+            "Takes the payout: any classic token account of the market's mint the wallet owns, or the",
+            "wallet's associated token account, created here when missing (caller pays). Unused, and",
+            "never created, when the payout is 0."
+          ],
+          "writable": true
+        },
+        {
+          "name": "ticket",
+          "docs": [
+            "PDA [\"ticket\", market, wallet]: closed, its rent to its payer."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "ticket.wallet",
+                "account": "Ticket"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket_payer",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "sweep_fees",
+      "docs": [
+        "The operator sends the market's fees to the house."
+      ],
+      "discriminator": [
+        175,
+        225,
+        98,
+        71,
+        118,
+        66,
+        34,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "fees",
+          "docs": [
+            "PDA [\"fees\", market]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "house_token",
+          "docs": [
+            "A token account of the Config's house."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "trade",
+      "docs": [
+        "The wallet moves its leg on `outcome_id` by `delta` shares (+ YES, - NO), paying at most",
+        "or receiving at least `limit` base units, fee included: a buy inside a window, a sell",
+        "inside a window or whenever sells are open (before sell_until and void_after)."
+      ],
+      "discriminator": [
+        178,
+        144,
+        26,
+        216,
+        241,
+        187,
+        206,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "wallet",
+          "docs": [
+            "The ticket's wallet: signs for its token account."
+          ],
+          "signer": true,
+          "relations": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "payer",
+          "docs": [
+            "Pays a new leg's growth of the ticket (the operator on the server's transactions; the",
+            "wallet itself may pay, and a sell never grows the ticket)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          },
+          "relations": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "PDA [\"vault\", market]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fees",
+          "docs": [
+            "PDA [\"fees\", market]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket",
+          "docs": [
+            "PDA [\"ticket\", market, wallet]."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "wallet_token",
+          "docs": [
+            "The wallet's token account: pays a buy, receives a sell."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "outcome_id",
+          "type": "u16"
+        },
+        {
+          "name": "delta",
+          "type": "i64"
+        },
+        {
+          "name": "limit",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "void_market",
+      "docs": [
+        "The arbiter voids a market not yet final, or anyone an unresolved one after void_after",
+        "while no window is open: every leg is paid at its frozen mark or scratch value."
+      ],
+      "discriminator": [
+        243,
+        175,
+        46,
+        124,
+        95,
+        101,
+        39,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The Config's arbiter, or anyone once void_after has passed."
+          ],
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.competition_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "The market's vault (re-derived): D6 at the marks is asserted from its balance."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    },
+    {
+      "name": "Ticket",
+      "discriminator": [
+        41,
+        228,
+        24,
+        165,
+        78,
+        90,
+        235,
+        200
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ConfigSet",
+      "discriminator": [
+        15,
+        104,
+        59,
+        16,
+        236,
+        241,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "FeesSwept",
+      "discriminator": [
+        96,
+        218,
+        115,
+        136,
+        74,
+        170,
+        202,
+        172
+      ]
+    },
+    {
+      "name": "MarketClosed",
+      "discriminator": [
+        86,
+        91,
+        119,
+        43,
+        94,
+        0,
+        217,
+        113
+      ]
+    },
+    {
+      "name": "MarketFinalized",
+      "discriminator": [
+        83,
+        62,
+        66,
+        204,
+        37,
+        76,
+        234,
+        179
+      ]
+    },
+    {
+      "name": "MarketOpened",
+      "discriminator": [
+        98,
+        146,
+        98,
+        81,
+        117,
+        211,
+        121,
+        211
+      ]
+    },
+    {
+      "name": "MarketStatusChanged",
+      "discriminator": [
+        53,
+        72,
+        160,
+        209,
+        15,
+        222,
+        46,
+        157
+      ]
+    },
+    {
+      "name": "MarketVoided",
+      "discriminator": [
+        217,
+        12,
+        138,
+        39,
+        108,
+        75,
+        89,
+        26
+      ]
+    },
+    {
+      "name": "OutcomeAdded",
+      "discriminator": [
+        127,
+        92,
+        233,
+        41,
+        190,
+        43,
+        100,
+        51
+      ]
+    },
+    {
+      "name": "OutcomeScratched",
+      "discriminator": [
+        91,
+        201,
+        254,
+        175,
+        156,
+        95,
+        32,
+        46
+      ]
+    },
+    {
+      "name": "ResultProposed",
+      "discriminator": [
+        216,
+        229,
+        56,
+        182,
+        48,
+        192,
+        53,
+        251
+      ]
+    },
+    {
+      "name": "SellUntilSet",
+      "discriminator": [
+        119,
+        29,
+        168,
+        249,
+        233,
+        13,
+        160,
+        82
+      ]
+    },
+    {
+      "name": "TicketOpened",
+      "discriminator": [
+        224,
+        38,
+        43,
+        125,
+        232,
+        170,
+        103,
+        203
+      ]
+    },
+    {
+      "name": "TicketRevoked",
+      "discriminator": [
+        204,
+        38,
+        235,
+        199,
+        44,
+        87,
+        149,
+        186
+      ]
+    },
+    {
+      "name": "TicketSettled",
+      "discriminator": [
+        72,
+        40,
+        13,
+        3,
+        184,
+        159,
+        190,
+        211
+      ]
+    },
+    {
+      "name": "Traded",
+      "discriminator": [
+        225,
+        202,
+        73,
+        175,
+        147,
+        43,
+        160,
+        150
+      ]
+    },
+    {
+      "name": "WindowsSet",
+      "discriminator": [
+        118,
+        157,
+        165,
+        147,
+        10,
+        25,
+        182,
+        36
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotUpgradeAuthority",
+      "msg": "The signer is not the program's upgrade authority"
+    },
+    {
+      "code": 6001,
+      "name": "UnauthorizedAdmin",
+      "msg": "The signer is not the Config's admin"
+    },
+    {
+      "code": 6002,
+      "name": "UnauthorizedOperator",
+      "msg": "The signer is not the Config's operator"
+    },
+    {
+      "code": 6003,
+      "name": "UnauthorizedResolver",
+      "msg": "The signer is not the Config's resolver"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedArbiter",
+      "msg": "The signer is not the Config's arbiter"
+    },
+    {
+      "code": 6005,
+      "name": "UnauthorizedHalt",
+      "msg": "The signer is neither the operator nor the guardian"
+    },
+    {
+      "code": 6006,
+      "name": "UnauthorizedResume",
+      "msg": "The signer may not resume this market"
+    },
+    {
+      "code": 6007,
+      "name": "UnauthorizedHouse",
+      "msg": "The signer is not the Config's house"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidConfig",
+      "msg": "A Config key is unset or a Config value is out of bounds"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidMint",
+      "msg": "The mint is not a 6-decimal classic SPL Token mint"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidMarketParams",
+      "msg": "The market's parameters are out of bounds"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidStatus",
+      "msg": "The market's status does not allow this instruction"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidWindow",
+      "msg": "A trading window is malformed"
+    },
+    {
+      "code": 6013,
+      "name": "TradingClosed",
+      "msg": "Trading is closed: no window is open"
+    },
+    {
+      "code": 6014,
+      "name": "UnknownOutcome",
+      "msg": "No outcome has this id"
+    },
+    {
+      "code": 6015,
+      "name": "OutcomeNotLive",
+      "msg": "The outcome is not live"
+    },
+    {
+      "code": 6016,
+      "name": "FieldNotTradeable",
+      "msg": "FIELD is never tradeable"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidOutcomeId",
+      "msg": "Outcome ids rise from 2 and are never reused"
+    },
+    {
+      "code": 6018,
+      "name": "TooManyEntries",
+      "msg": "The market holds the most live entries it may"
+    },
+    {
+      "code": 6019,
+      "name": "TooManyOutcomes",
+      "msg": "The market holds the most outcomes it may"
+    },
+    {
+      "code": 6020,
+      "name": "MassBelowFloor",
+      "msg": "A mass is below the market's m_floor, or would leave FIELD below it"
+    },
+    {
+      "code": 6021,
+      "name": "NotAnEntry",
+      "msg": "Only an entry can be scratched"
+    },
+    {
+      "code": 6022,
+      "name": "ScratchAfterLock",
+      "msg": "Scratches end at lock_ts"
+    },
+    {
+      "code": 6023,
+      "name": "TicketRevoked",
+      "msg": "The ticket is revoked: buys are refused, sells are not"
+    },
+    {
+      "code": 6024,
+      "name": "TicketMismatch",
+      "msg": "The ticket belongs to another market or wallet"
+    },
+    {
+      "code": 6025,
+      "name": "ZeroDelta",
+      "msg": "A trade of zero shares"
+    },
+    {
+      "code": 6026,
+      "name": "CrossesZero",
+      "msg": "A trade may not take a position across zero: a flip is two trades"
+    },
+    {
+      "code": 6027,
+      "name": "BuyTooSmall",
+      "msg": "A buy must cost at least one base unit"
+    },
+    {
+      "code": 6028,
+      "name": "LimitExceeded",
+      "msg": "The trade pays more, or receives less, than its limit"
+    },
+    {
+      "code": 6029,
+      "name": "TooManyLegs",
+      "msg": "The ticket holds the most legs it may"
+    },
+    {
+      "code": 6030,
+      "name": "MathOverflow",
+      "msg": "A fixed-point value left its range"
+    },
+    {
+      "code": 6031,
+      "name": "MathDomain",
+      "msg": "A fixed-point argument is outside its domain"
+    },
+    {
+      "code": 6032,
+      "name": "Insolvent",
+      "msg": "The vault would hold less than the market's worst-case liability (D6)"
+    },
+    {
+      "code": 6033,
+      "name": "TradingNotEnded",
+      "msg": "Trading has not ended"
+    },
+    {
+      "code": 6034,
+      "name": "InvalidWinner",
+      "msg": "The winner must be NONE, FIELD or a live entry"
+    },
+    {
+      "code": 6035,
+      "name": "InvalidResult",
+      "msg": "The result hash must not be zero"
+    },
+    {
+      "code": 6036,
+      "name": "EscrowRequired",
+      "msg": "The market names a prize escrow: pass it"
+    },
+    {
+      "code": 6037,
+      "name": "EscrowMismatch",
+      "msg": "The escrow account is not the one the market names, or not the escrow program's"
+    },
+    {
+      "code": 6038,
+      "name": "EscrowNotSettled",
+      "msg": "The escrow is not Claimable or Closed, or holds another competition or result"
+    },
+    {
+      "code": 6039,
+      "name": "DisputeOpen",
+      "msg": "The dispute delay has not passed"
+    },
+    {
+      "code": 6040,
+      "name": "DisputeOver",
+      "msg": "The dispute delay has passed"
+    },
+    {
+      "code": 6041,
+      "name": "VoidNotYet",
+      "msg": "void_after has not passed: only the arbiter may void now"
+    },
+    {
+      "code": 6042,
+      "name": "TicketsOpen",
+      "msg": "Tickets are still open"
+    },
+    {
+      "code": 6043,
+      "name": "TokenAccountMismatch",
+      "msg": "The token account is not this market's mint or owner"
+    },
+    {
+      "code": 6044,
+      "name": "FeeRateTooHigh",
+      "msg": "The fee rate is above the Config's max_fee_rate_ppm"
+    },
+    {
+      "code": 6045,
+      "name": "PayerMismatch",
+      "msg": "The account is not the market's or the ticket's rent payer"
+    },
+    {
+      "code": 6046,
+      "name": "VoidWhileTrading",
+      "msg": "A trading window is open: only the arbiter may void now"
+    }
+  ],
+  "types": [
+    {
+      "name": "Config",
+      "docs": [
+        "The program's one Config, PDA `[\"config\"]` (D14): its roles, the mint every market trades in",
+        "(fixed at init), the prize escrow program propose reads, the dispute delay and the fee cap."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Sets the Config (set_config) and may resume any halted market."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "docs": [
+              "May halt a market (only escalate): a key never on the server."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "arbiter",
+            "docs": [
+              "Overrides a proposed result or voids a market before it is final."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "operator",
+            "docs": [
+              "The server's key: opens markets and tickets, sets windows, lists and scratches entries,",
+              "halts and resumes, sweeps fees and closes markets."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "resolver",
+            "docs": [
+              "Proposes each market's result."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "house",
+            "docs": [
+              "Deposits each market's seed and takes its surplus and fees."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "The one mint (classic SPL Token, 6 decimals): USDC on mainnet, the house test mint on",
+              "devnet and localnet. Fixed at init_config."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "escrow_program",
+            "docs": [
+              "The prize escrow program whose escrow accounts propose reads."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "min_dispute_secs",
+            "docs": [
+              "D10: seconds between propose and the earliest finalize."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "max_fee_rate_ppm",
+            "docs": [
+              "D5: the highest fee rate a market may open with, in ppm (at most MAX_FEE_RATE_PPM)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Zeroed room for later fields."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigParams",
+      "docs": [
+        "Every Config setting but the mint: init_config's and set_config's argument."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "type": "pubkey"
+          },
+          {
+            "name": "arbiter",
+            "type": "pubkey"
+          },
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "resolver",
+            "type": "pubkey"
+          },
+          {
+            "name": "house",
+            "type": "pubkey"
+          },
+          {
+            "name": "escrow_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "min_dispute_secs",
+            "type": "i64"
+          },
+          {
+            "name": "max_fee_rate_ppm",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigSet",
+      "docs": [
+        "init_config (initialized = true) or set_config: the Config's settings after it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "config",
+            "type": "pubkey"
+          },
+          {
+            "name": "by",
+            "type": "pubkey"
+          },
+          {
+            "name": "initialized",
+            "type": "bool"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "params",
+            "type": {
+              "defined": {
+                "name": "ConfigParams"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeesSwept",
+      "docs": [
+        "sweep_fees."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Leg",
+      "docs": [
+        "One outcome a ticket traded."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "outcome_id",
+            "type": "u16"
+          },
+          {
+            "name": "shares",
+            "docs": [
+              "Signed position: + YES, - NO."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "cost_in",
+            "docs": [
+              "What the wallet paid into the leg, fees included, all time."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "proceeds_out",
+            "docs": [
+              "What the leg paid the wallet, fees taken, all time."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "docs": [
+        "One competition's market. PDA `[\"market\", competition_id]`; its vault `[\"vault\", market]`",
+        "and fees account `[\"fees\", market]` are classic SPL token accounts it owns."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          },
+          {
+            "name": "fees_bump",
+            "type": "u8"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "MarketStatus"
+              }
+            }
+          },
+          {
+            "name": "halted_by_guardian",
+            "docs": [
+              "The guardian halted it: only the admin resumes."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "competition_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "payer",
+            "docs": [
+              "Paid the market's rent (the operator at open): close_market returns it here."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "escrow",
+            "docs": [
+              "The competition's prize escrow (prize_escrow program), or Pubkey::default() with none."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "b",
+            "docs": [
+              "Liquidity, base units (math::liquidity_for)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "m_floor_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "fee_rate_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "deposit",
+            "docs": [
+              "What the house deposited at open: ceil(b L) + 1,000."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "lock_ts",
+            "docs": [
+              "The competition deadline: scratches end here."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "void_after",
+            "docs": [
+              "lock_ts + VOID_GRACE: from here anyone may void a market not yet proposed."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bounty_from",
+            "type": "i64"
+          },
+          {
+            "name": "bounty_until",
+            "type": "i64"
+          },
+          {
+            "name": "race_from",
+            "type": "i64"
+          },
+          {
+            "name": "race_until",
+            "type": "i64"
+          },
+          {
+            "name": "sell_until",
+            "docs": [
+              "Position-reducing trades (sells) land until this moment, the moment the competition's",
+              "result becomes public (set_sell_until); 0 = no such moment set (sells land until the market",
+              "is proposed). Never past void_after either way (sells_open)."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "The book's frame (math.rs): the reference exponent and the exact sum of the cached weights."
+            ],
+            "type": "i128"
+          },
+          {
+            "name": "sum",
+            "type": "u128"
+          },
+          {
+            "name": "no_total",
+            "docs": [
+              "N: NO shares outstanding on every live outcome."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "scratch_owed",
+            "docs": [
+              "F: what scratched legs are still owed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fees_paid",
+            "docs": [
+              "Fees paid into the fees account, all time."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "tickets",
+            "docs": [
+              "Tickets open (opened and not yet settled)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "live_entries",
+            "type": "u16"
+          },
+          {
+            "name": "last_outcome_id",
+            "docs": [
+              "The highest outcome id listed (FIELD_ID until the first entry)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "winner",
+            "docs": [
+              "The proposed, then final, winner."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "result_sha256",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "opened_at",
+            "type": "i64"
+          },
+          {
+            "name": "proposed_at",
+            "type": "i64"
+          },
+          {
+            "name": "dispute_ends_at",
+            "type": "i64"
+          },
+          {
+            "name": "resolved_at",
+            "docs": [
+              "When it became Final or Void."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Zeroed room for later fields."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "outcomes",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Outcome"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketClosed",
+      "docs": [
+        "close_market: the surplus and fees went to the house, the accounts closed."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "surplus",
+            "type": "u64"
+          },
+          {
+            "name": "fees",
+            "type": "u64"
+          },
+          {
+            "name": "scratch_dust",
+            "docs": [
+              "Unpaid scratch dust (F) left when it closed."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketFinalized",
+      "docs": [
+        "finalize."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "winner",
+            "type": "u16"
+          },
+          {
+            "name": "result_sha256",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "liability",
+            "type": "u64"
+          },
+          {
+            "name": "vault",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketOpened",
+      "docs": [
+        "open_market: the market exists and its vault holds `deposit`."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "competition_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "escrow",
+            "type": "pubkey"
+          },
+          {
+            "name": "b",
+            "type": "u64"
+          },
+          {
+            "name": "m_floor_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "fee_rate_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "deposit",
+            "type": "u64"
+          },
+          {
+            "name": "none_mass_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "field_mass_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "lock_ts",
+            "type": "i64"
+          },
+          {
+            "name": "void_after",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketStatus",
+      "docs": [
+        "Where a market is in its life."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Halted"
+          },
+          {
+            "name": "Proposed"
+          },
+          {
+            "name": "Final"
+          },
+          {
+            "name": "Void"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketStatusChanged",
+      "docs": [
+        "halt or resume."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "by",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "MarketStatus"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketVoided",
+      "docs": [
+        "void_market."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "by",
+            "type": "pubkey"
+          },
+          {
+            "name": "liability",
+            "type": "u64"
+          },
+          {
+            "name": "vault",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpenMarketArgs",
+      "docs": [
+        "open_market's settings (D2, D3, D5, D7, D10, D11)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seed",
+            "docs": [
+              "The house's seed, base units: b = floor(seed / ln(1/m_floor)), and the house deposits",
+              "ceil(b ln(1/m_floor)) + 1,000 (math::liquidity_for)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "m_floor_ppm",
+            "docs": [
+              "The minimum world share, ppm, in [MIN_M_FLOOR_PPM, MAX_M_FLOOR_PPM]."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "none_mass_ppm",
+            "docs": [
+              "NONE's opening mass, ppm, at least m_floor; FIELD takes the rest, at least m_floor too."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "fee_rate_ppm",
+            "docs": [
+              "The market's fee rate, ppm, at most the Config's max_fee_rate_ppm."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "lock_ts",
+            "docs": [
+              "The competition deadline (unix seconds): scratches end here, and void_after is 14 days on."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "escrow",
+            "docs": [
+              "The competition's prize escrow (owned by Config.escrow_program), or Pubkey::default():",
+              "propose then requires it Claimable or Closed on the same result."
+            ],
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Outcome",
+      "docs": [
+        "One outcome of a market's book."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u16"
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "OutcomeKind"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "OutcomeStatus"
+              }
+            }
+          },
+          {
+            "name": "mass_ppm",
+            "docs": [
+              "Its mass in ppm: masses of the live outcomes sum to 1,000,000 exactly."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "theta",
+            "docs": [
+              "ln of its mass as Q64.64, rounded so C never rises (math::theta_of_ppm, math::join)."
+            ],
+            "type": "i128"
+          },
+          {
+            "name": "q",
+            "docs": [
+              "Net shares: YES minus NO, base units. Frozen at its scratch for a scratched outcome; after",
+              "resolution, what the unsettled tickets still hold."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "no_shares",
+            "docs": [
+              "NO shares outstanding on it (N_j)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "w",
+            "docs": [
+              "Cached weight exp(x - base) (math.rs), 0 out of the book."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "yes_value",
+            "docs": [
+              "A scratched outcome's YES value, or a live one's frozen YES mark (halt, void): Q0.64."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "no_value",
+            "docs": [
+              "The NO counterpart of yes_value: Q0.64."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OutcomeAdded",
+      "docs": [
+        "add_outcome: an entry joined, taking `mass_ppm` from FIELD."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome_id",
+            "type": "u16"
+          },
+          {
+            "name": "mass_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "field_mass_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "theta",
+            "type": "i128"
+          },
+          {
+            "name": "field_theta",
+            "type": "i128"
+          },
+          {
+            "name": "base",
+            "type": "i128"
+          },
+          {
+            "name": "sum",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OutcomeKind",
+      "docs": [
+        "What an outcome stands for (D1)."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "None"
+          },
+          {
+            "name": "Field"
+          },
+          {
+            "name": "Entry"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OutcomeScratched",
+      "docs": [
+        "scratch_outcome: an entry unwound at the AMM (D7)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome_id",
+            "type": "u16"
+          },
+          {
+            "name": "q",
+            "docs": [
+              "Its net shares and NO shares when scratched."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "no_shares",
+            "type": "u64"
+          },
+          {
+            "name": "yes_value",
+            "docs": [
+              "What a YES and a NO share are paid (Q0.64)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "no_value",
+            "type": "u64"
+          },
+          {
+            "name": "owed",
+            "docs": [
+              "What it adds to F."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "field_mass_ppm",
+            "type": "u32"
+          },
+          {
+            "name": "base",
+            "type": "i128"
+          },
+          {
+            "name": "sum",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OutcomeStatus",
+      "docs": [
+        "Whether an outcome is in the book."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Live"
+          },
+          {
+            "name": "Scratched"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ResultProposed",
+      "docs": [
+        "propose (overridden = false) or override_result (true)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "by",
+            "type": "pubkey"
+          },
+          {
+            "name": "winner",
+            "type": "u16"
+          },
+          {
+            "name": "result_sha256",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "dispute_ends_at",
+            "type": "i64"
+          },
+          {
+            "name": "overridden",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SellUntilSet",
+      "docs": [
+        "set_sell_until: sells outside every window land until `sell_until` (0: until the market is",
+        "proposed), never past void_after."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "sell_until",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ticket",
+      "docs": [
+        "A wallet's position in one market (D9). PDA `[\"ticket\", market, wallet]`, opened by the",
+        "operator after the server's eligibility check; its legs grow by realloc."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "revoked",
+            "docs": [
+              "Buys refused; sells never are."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "docs": [
+              "Paid the ticket's rent: settle_ticket returns it here."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "opened_at",
+            "type": "i64"
+          },
+          {
+            "name": "legs",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Leg"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketOpened",
+      "docs": [
+        "open_ticket."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticket",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketRevoked",
+      "docs": [
+        "revoke_ticket."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticket",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "revoked",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketSettled",
+      "docs": [
+        "settle_ticket: the wallet was paid and the ticket closed."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticket",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "payout",
+            "type": "u64"
+          },
+          {
+            "name": "tickets_left",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Traded",
+      "docs": [
+        "trade: one leg moved by `delta` (D4)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome_id",
+            "type": "u16"
+          },
+          {
+            "name": "delta",
+            "type": "i64"
+          },
+          {
+            "name": "position",
+            "docs": [
+              "The leg's position after it."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "pay",
+            "docs": [
+              "What the wallet paid into the vault (a buy), before the fee."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "receive",
+            "docs": [
+              "What the vault paid the wallet (a sell), the fee already taken."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "q",
+            "docs": [
+              "The outcome's q and the market's N, base and sum after it."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "no_total",
+            "type": "u64"
+          },
+          {
+            "name": "base",
+            "type": "i128"
+          },
+          {
+            "name": "sum",
+            "type": "u128"
+          },
+          {
+            "name": "vault",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WindowsSet",
+      "docs": [
+        "set_windows: the trading windows after it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "bounty_from",
+            "type": "i64"
+          },
+          {
+            "name": "bounty_until",
+            "type": "i64"
+          },
+          {
+            "name": "race_from",
+            "type": "i64"
+          },
+          {
+            "name": "race_until",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "CONFIG_SEED",
+      "docs": [
+        "Seed of the Config PDA: `[\"config\"]`."
+      ],
+      "type": "bytes",
+      "value": "[99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "FEES_SEED",
+      "docs": [
+        "Seed of a market's fees account, a classic SPL token account at `[\"fees\", market]` whose",
+        "authority is the market: trade fees land there, outside the D6 invariant."
+      ],
+      "type": "bytes",
+      "value": "[102, 101, 101, 115]"
+    },
+    {
+      "name": "FIELD_ID",
+      "docs": [
+        "Outcome id of FIELD: an entry that was never listed wins. Never tradeable: the mass every join",
+        "takes from and every scratch returns to."
+      ],
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "FIRST_ENTRY_ID",
+      "docs": [
+        "The first entry's outcome id; ids rise from here and are never reused."
+      ],
+      "type": "u16",
+      "value": "2"
+    },
+    {
+      "name": "MARKET_SEED",
+      "docs": [
+        "Seed of a Market PDA: `[\"market\", competition_id]`, competition_id being the competition's",
+        "16-byte UUID: one market per competition."
+      ],
+      "type": "bytes",
+      "value": "[109, 97, 114, 107, 101, 116]"
+    },
+    {
+      "name": "MAX_DISPUTE_SECS",
+      "docs": [
+        "The longest dispute delay a Config accepts, in seconds: 30 days."
+      ],
+      "type": "i64",
+      "value": "2592000"
+    },
+    {
+      "name": "MAX_FEE_RATE_PPM",
+      "docs": [
+        "D5: the highest fee rate any Config may allow, in ppm (7%)."
+      ],
+      "type": "u32",
+      "value": "70000"
+    },
+    {
+      "name": "MAX_LEGS",
+      "docs": [
+        "The most legs a Ticket holds: one per tradeable outcome."
+      ],
+      "type": "u16",
+      "value": "95"
+    },
+    {
+      "name": "MAX_LIVE_ENTRIES",
+      "docs": [
+        "D1: the most entries live at once. A trade at 66 outcomes (64 entries, NONE, FIELD) is the",
+        "compute-unit ceiling the program's tests measure."
+      ],
+      "type": "u16",
+      "value": "64"
+    },
+    {
+      "name": "MAX_M_FLOOR_PPM",
+      "docs": [
+        "The largest m_floor, in ppm."
+      ],
+      "type": "u32",
+      "value": "250000"
+    },
+    {
+      "name": "MAX_OUTCOMES",
+      "docs": [
+        "The most outcomes a market ever holds, NONE, FIELD and scratched entries included (a scratched",
+        "entry keeps its slot: its values pay its legs at settlement): 64 live entries and 30 scratched",
+        "ones. Bounded by the program's 32 KiB heap: Borsh reads a Vec of 96 Outcomes (80 bytes each in",
+        "memory) in two allocations (51, then 102 slots: 12.2 KiB), and a Ticket's 95 legs in one, so the",
+        "largest trade's market, ticket and book stay well inside it."
+      ],
+      "type": "u16",
+      "value": "96"
+    },
+    {
+      "name": "MINT_DECIMALS",
+      "docs": [
+        "The mint's decimals: USDC and the house test mint are both 6-dp."
+      ],
+      "type": "u8",
+      "value": "6"
+    },
+    {
+      "name": "MIN_DISPUTE_SECS",
+      "docs": [
+        "The shortest dispute delay a Config accepts, in seconds."
+      ],
+      "type": "i64",
+      "value": "60"
+    },
+    {
+      "name": "MIN_M_FLOOR_PPM",
+      "docs": [
+        "The smallest m_floor (the minimum world share), in ppm."
+      ],
+      "type": "u32",
+      "value": "100"
+    },
+    {
+      "name": "NONE_ID",
+      "docs": [
+        "Outcome id of NONE: no entry wins, or the prize is not awarded. Tradeable."
+      ],
+      "type": "u16",
+      "value": "0"
+    },
+    {
+      "name": "TICKET_SEED",
+      "docs": [
+        "Seed of a Ticket PDA: `[\"ticket\", market, wallet]`."
+      ],
+      "type": "bytes",
+      "value": "[116, 105, 99, 107, 101, 116]"
+    },
+    {
+      "name": "VAULT_SEED",
+      "docs": [
+        "Seed of a market's vault, a classic SPL token account at `[\"vault\", market]` whose authority",
+        "is the market."
+      ],
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116]"
+    },
+    {
+      "name": "VOID_GRACE",
+      "docs": [
+        "D11: a market not final by lock_ts + VOID_GRACE may be voided by anyone: 14 days."
+      ],
+      "type": "i64",
+      "value": "1209600"
+    }
+  ]
+}
