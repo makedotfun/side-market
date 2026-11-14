@@ -37,16 +37,42 @@ Devnet runs the same bytes. Every public key the deployments use, per cluster, i
 
 In the program's own words: per-entry YES/NO prediction markets in USDC, priced by a mass-weighted LMSR, with scratches, halts, a disputed resolution and void at marks.
 
-- **Pricing.** A mass-weighted LMSR in Q64.64 fixed point ([`math.rs`](chain/programs/side_market/src/math.rs)) prices every listed entry, NONE (no entry wins) and FIELD (an entry not listed wins). Pays round up and receipts round down.
+- **Pricing.** A mass-weighted LMSR in Q64.64 fixed point ([`math.rs`](chain/programs/side_market/src/math.rs)) prices every listed entry, NONE (no entry wins) and FIELD (an entry not listed wins). What a trade pays rounds up, and what it receives rounds down.
 - **The house seed.** The house deposits the market's seed when it opens: the market maker's worst-case loss, `ceil(b ln(1/m_floor))`, plus a cushion of 1,000 base units. At the end of every instruction that moves value the program checks that the vault covers what it owes in every possible outcome.
 - **Tickets.** A wallet trades through its own ticket account, which the operator opens for it. Buys land only inside the trading windows the operator opens. A sell can close a position whenever the market is open, inside a window or not, until the moment the operator names for the result to become public. The operator can stop a ticket's buys, never its sells.
 - **Scratches.** Before the competition's deadline the operator may scratch an entry that was replaced, rejected or withdrawn. Its positions are unwound at the market price and paid fixed values.
 - **Halts.** The operator or the guardian can halt a market, which freezes its marks. A halted market trades nothing. Only the admin lifts a guardian's halt.
 - **Resolution.** Once trading has ended the resolver proposes the winner, cross-checked against a make.fun prize escrow's result when the market names one. During the Config's dispute delay (21,600 seconds on mainnet) the arbiter may override the result or void the market. After the delay anyone can finalize it, and once a market is final or void anyone can settle a ticket, which pays its wallet.
-- **Void.** Anyone may void a market still unresolved 14 days after the deadline, while no trading window is open. A void pays the marks frozen at that moment (YES at the price p, NO at 1 - p), never a refund at cost.
+- **Void.** Anyone may void a market still unresolved 14 days after the deadline, while no trading window is open. A void pays every live position at its mark, the price p frozen from the book as it stands (YES p, NO 1 - p), and a scratched one its scratch value, never a refund at cost.
 - **Fees.** A market's fee rate is capped by the Config, at most 70,000 ppm (7%). The fees go to the house, and so does the market's surplus when it closes.
 
 Every instruction emits its event through a self-CPI (`emit_cpi!`), which a truncated log cannot hide. The full interface is the IDL at [`chain/idl/side_market.json`](chain/idl/side_market.json), and the module comment of [`lib.rs`](chain/programs/side_market/src/lib.rs) describes the program in more detail.
+
+## Verify it yourself
+
+The deployed program can be rebuilt byte for byte from this repository. Each commit here that holds the program's source carries a `Source-Revision` trailer, and that is the revision the program stamps into its embedded security.txt. The mainnet program reports `source_revision` `00418aee9462c011513409f963618b02bee91cdb`, which commit `34c6d9db0b56d601cfbf0388e199ffe6b50a667b` of this repository holds.
+
+You need Docker and [solana-verify](https://github.com/Ellipsis-Labs/solana-verifiable-build) 0.5.2. The build runs in the `solanafoundation/solana-verifiable-build` image for Agave 3.1.10.
+
+```sh
+solana-verify verify-from-repo https://github.com/makedotfun/side-market --program-id D5Th7ozaTzvj4v5GMrLkMH6sef3hmZAqmrNAugmLsGiH --commit-hash 34c6d9db0b56d601cfbf0388e199ffe6b50a667b --mount-path chain --library-name side_market --arch v2 '--cargo-build-sbf-args=--tools-version v1.57' -- --config 'env.SOURCE_REVISION="00418aee9462c011513409f963618b02bee91cdb"'
+```
+
+Add `--url https://api.mainnet-beta.solana.com` to compare against mainnet. After comparing the hashes it asks whether to upload the verification data on chain. You can decline; that step needs a funded keypair and changes nothing about the result.
+
+To compare by hand instead:
+
+```sh
+git clone https://github.com/makedotfun/side-market && cd side-market
+git checkout 34c6d9db0b56d601cfbf0388e199ffe6b50a667b
+solana-verify build chain --library-name side_market --arch v2 \
+  '--cargo-build-sbf-args=--tools-version v1.57' \
+  -- --config 'env.SOURCE_REVISION="00418aee9462c011513409f963618b02bee91cdb"'
+solana-verify get-executable-hash chain/target/deploy/side_market.so
+solana-verify get-program-hash -u https://api.mainnet-beta.solana.com D5Th7ozaTzvj4v5GMrLkMH6sef3hmZAqmrNAugmLsGiH
+```
+
+Both hashes should be `8caad77074d8c015cf0cf243088ae9137f64ddf6233e05e33e837a1ba50c525a`. solana-verify trims trailing zero bytes before hashing; the sha256 of the whole deployed file is the one in the table above. [`build.rs`](chain/programs/side_market/build.rs) stamps `SOURCE_REVISION` into security.txt, so leaving it out changes only those bytes. Use the container build: `anchor build` stops at the hooks in `Anchor.toml`, which call deploy tooling that is not published here.
 
 ## Status
 
