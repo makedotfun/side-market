@@ -115,7 +115,8 @@ pub enum MarketStatus {
     Proposed,
     /// The winner stands: settle_ticket pays every ticket.
     Final,
-    /// Voided: every live leg is paid its frozen mark, every scratched leg its scratch value.
+    /// Voided: every live leg is paid its frozen mark; a scratched entry's YES legs are paid 0 and
+    /// its NO legs 1 a share.
     Void,
 }
 
@@ -134,7 +135,8 @@ pub enum OutcomeKind {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq, InitSpace)]
 pub enum OutcomeStatus {
     Live,
-    /// Unwound before lock_ts (D7): its legs are paid yes_value / no_value at settlement.
+    /// Scratched before lock_ts (D7), settled as an entry that did not win: its legs are paid
+    /// yes_value (0) / no_value (1) at settlement.
     Scratched,
 }
 
@@ -144,9 +146,12 @@ pub struct Outcome {
     pub id: u16,
     pub kind: OutcomeKind,
     pub status: OutcomeStatus,
-    /// Its mass in ppm: masses of the live outcomes sum to 1,000,000 exactly.
+    /// Its mass in ppm: masses of the live outcomes sum to at most 1,000,000 (exactly, until an
+    /// entry with q < 0 is scratched: FIELD then takes only the part of its mass its weight still
+    /// held, math::scratch_mass_ppm).
     pub mass_ppm: u32,
-    /// ln of its mass as Q64.64, rounded so C never rises (math::theta_of_ppm, math::join).
+    /// ln of its mass as Q64.64, rounded so C never rises (math::theta_of_ppm, math::join,
+    /// math::scratch: FIELD's is ln of the weight it holds).
     pub theta: i128,
     /// Net shares: YES minus NO, base units. Frozen at its scratch for a scratched outcome; after
     /// resolution, what the unsettled tickets still hold.
@@ -155,9 +160,10 @@ pub struct Outcome {
     pub no_shares: u64,
     /// Cached weight exp(x - base) (math.rs), 0 out of the book.
     pub w: u128,
-    /// A scratched outcome's YES value, or a live one's frozen YES mark (halt, void): Q0.64.
+    /// A scratched outcome's YES value (0), or a live one's frozen YES mark (halt, void): Q0.64,
+    /// u64::MAX standing for 1 (math::value_of).
     pub yes_value: u64,
-    /// The NO counterpart of yes_value: Q0.64.
+    /// The NO counterpart of yes_value: Q0.64 (u64::MAX, 1, for a scratched outcome).
     pub no_value: u64,
 }
 

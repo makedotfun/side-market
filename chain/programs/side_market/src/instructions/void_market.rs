@@ -37,8 +37,9 @@ pub struct VoidMarket<'info> {
 /// between the buy's price and its frozen mark from the house; a sell outside every window lands
 /// only before void_after, Market::sells_open, so it never shares one with this void). Every live
 /// outcome's marks are frozen from the book as it stands (as halt froze them: the book does not
-/// move while Halted), so void pays every live leg its mark (YES p, NO 1 - p) and every scratched
-/// leg its scratch value. The vault must cover that (D6 at the marks).
+/// move while Halted), so void pays every live leg its mark (YES p, NO 1 - p), and a scratched
+/// entry's legs what a scratch fixed (YES 0, NO 1 a share). The vault must cover that (D6 at the
+/// marks).
 pub fn handle_void_market(ctx: Context<VoidMarket>) -> Result<()> {
     let at = now()?;
     let by = ctx.accounts.signer.key();

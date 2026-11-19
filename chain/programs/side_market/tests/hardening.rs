@@ -1,5 +1,6 @@
 //! The independent review's fixes on the release build (LiteSVM under mainnet's feature set): a
-//! scratch of a hedged book pays both sides at one value, its price (F1); settle_ticket pays into
+//! scratch of a hedged book pays its YES 0 and its NO 1 a share whatever the net (F1, under the
+//! rule that a scratched entry loses); settle_ticket pays into
 //! any token account of the mint the ticket's wallet owns when its associated token account was
 //! reassigned (F2), and creates nothing for a payout of 0; anyone's void waits for every trading
 //! window to close; propose waits out a guardian's halt; a trade to i64::MIN NO shares is an error,
@@ -25,7 +26,6 @@ use {
 
 const E1: u16 = FIRST_ENTRY_ID;
 const USDC: u64 = 1_000_000;
-const ONE: u128 = 1 << 64;
 
 fn trader(w: &mut World, m: &Mkt, amount: u64) -> Trader {
     let t = w.trader(amount);
@@ -59,7 +59,7 @@ fn settle_into(w: &mut World, m: &Mkt, wallet: Pubkey, to: Pubkey) -> Sent {
 }
 
 #[test]
-fn a_hedged_scratch_pays_both_sides_at_the_price() {
+fn a_hedged_scratch_pays_yes_nothing_and_no_one_whatever_the_net() {
     for (n, net) in [
         (30u8, 0i64),
         (31, 1),
@@ -83,40 +83,26 @@ fn a_hedged_scratch_pays_both_sides_at_the_price() {
         let before = w.market(&m);
         let k = before.index_of(E1).unwrap();
         assert_eq!(before.outcomes[k].q, net);
-        let (p, _) = math::frac_q64(before.outcomes[k].w.min(before.sum), before.sum).unwrap();
+        let liability = w.assert_d6(&m);
 
         expect_ok(w.scratch(&m, E1), "scratch");
-        w.assert_d6(&m);
-        let o = w.market(&m).outcomes[k];
-        let (yes, no) = (u128::from(o.yes_value), u128::from(o.no_value));
         assert!(
-            yes + no <= ONE && yes + no >= ONE - 1,
-            "net {net}: one value: {yes} + {no}"
+            w.assert_d6(&m) <= liability,
+            "net {net}: the liability rose"
         );
-        if net == 0 {
-            assert_eq!(yes, p, "net 0 pays the price");
-        } else if net.abs() <= 100 {
-            let tol = (u128::from(net.unsigned_abs()) << 64) / u128::from(before.b) + (1 << 36);
-            assert!(yes.abs_diff(p) <= tol, "net {net}: v {yes} vs p {p}");
-        }
+        let o = w.market(&m).outcomes[k];
+        assert_eq!((o.yes_value, o.no_value), (0, u64::MAX), "net {net}");
+        assert_eq!(w.market(&m).scratch_owed, (y - net) as u64, "net {net}: F");
 
-        // Every ending pays the scratched legs their values: NONE wins here.
+        // NONE wins: the scratched YES is paid nothing, every NO share 1.
         finalize(&mut w, &m, NONE_ID);
         let got_a = w.settle(&m, a.key.pubkey());
         let got_b = w.settle(&m, b.key.pubkey());
-        assert_eq!(got_a, math::value_of(y as u64, o.yes_value), "net {net}");
-        assert_eq!(
-            got_b,
-            math::value_of((y - net) as u64, o.no_value),
-            "net {net}"
-        );
-        if net.abs() <= 3 {
-            // At p = 0.5 both sides get about 50 USDC (before the fix, net 3 paid both 0).
-            assert!(
-                got_a >= 49_900_000 && got_b >= 49_900_000,
-                "net {net}: {got_a}, {got_b}"
-            );
-        }
+        assert_eq!(got_a, 0, "net {net}");
+        assert_eq!(got_b, (y - net) as u64, "net {net}");
+        assert_eq!(got_a, math::value_of(y as u64, o.yes_value));
+        assert_eq!(got_b, math::value_of((y - net) as u64, o.no_value));
+        assert_eq!(w.market(&m).scratch_owed, 0, "net {net}: F paid out");
         w.assert_d6(&m);
         let market = w.market(&m);
         let surplus = w.tokens(&m.vault);
@@ -124,6 +110,8 @@ fn a_hedged_scratch_pays_both_sides_at_the_price() {
             w.as_operator(w.close_ix(&m, w.k.operator.pubkey())),
             "close",
         );
+        // The house keeps the unwind R when q_k >= 0; when q_k < 0 FIELD takes k's current
+        // weight, so C does not move and the house's LMSR bound stands as it was.
         let loss = market.deposit.saturating_sub(surplus);
         let bound = math::max_loss(market.b, math::loss_per_b(M_FLOOR).unwrap()).unwrap();
         assert!(loss <= bound, "net {net}: house lost {loss} > {bound}");

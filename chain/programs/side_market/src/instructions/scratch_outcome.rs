@@ -32,11 +32,16 @@ pub struct ScratchOutcome<'info> {
     pub vault: Account<'info, TokenAccount>,
 }
 
-/// D7: before lock_ts, the operator unwinds a live entry replaced, rejected or withdrawn at the
-/// AMM (math::scratch): R = C(q) - C(q - q_k e_k) bracketed in Q64.64, one value v = R / q_k
-/// rounded the house's way (its price w_k / sum when q_k is 0); YES shares on it are owed v each
-/// and NO shares 1 - v, accrued to F (floor(Y v) + floor(N (1 - v)) <= R + N_k, at least what
-/// every leg is paid); its NO shares leave N and its mass returns to FIELD.
+/// D7: before lock_ts, the operator scratches a live entry replaced, rejected or withdrawn
+/// (math::scratch): it is settled as an entry that did not win. Its YES shares are owed 0 and its
+/// NO shares 1 base unit each (yes_value 0, no_value u64::MAX: math::SCRATCH_YES, SCRATCH_NO),
+/// whatever anyone traded on it or on another outcome, before or after; F takes the N_k its NO
+/// shares are owed as they leave N, and the max-q term loses k, so the liability never rises.
+/// Its legs are paid when the market settles, final or void. FIELD absorbs it (math::scratch):
+/// its base mass when q_k >= 0 (C falls, the house keeps it), its current weight when q_k < 0 (C
+/// and every other price stay put, so the house's guarantee is never spent on its NO holders),
+/// and FIELD's mass_ppm grows by math::scratch_mass_ppm (k's mass, or the part of it k's weight
+/// still held, rounded down: the live masses then sum to at most 1,000,000).
 pub fn handle_scratch_outcome(ctx: Context<ScratchOutcome>, outcome_id: u16) -> Result<()> {
     let market = &mut ctx.accounts.market;
     require_status(market.status, &[MarketStatus::Open, MarketStatus::Halted])?;
@@ -52,6 +57,10 @@ pub fn handle_scratch_outcome(ctx: Context<ScratchOutcome>, outcome_id: u16) -> 
     );
     let field = market.field_index()?;
     let (b, base, sum) = (market.b, market.base, market.sum);
+    let merged_mass = {
+        let o = &market.outcomes[k];
+        math::scratch_mass_ppm(o.mass_ppm, o.q, b)?
+    };
     let s = math::scratch(&mut market.outcomes, k, field, base, sum, b)?;
     market.base = s.base;
     market.sum = s.sum;
@@ -62,7 +71,7 @@ pub fn handle_scratch_outcome(ctx: Context<ScratchOutcome>, outcome_id: u16) -> 
     let owed = math::value_of(o.yes_shares()?, s.yes)
         .checked_add(math::value_of(o.no_shares, s.no))
         .ok_or(SideMarketError::MathOverflow)?;
-    let (no_shares, q, mass) = (o.no_shares, o.q, o.mass_ppm);
+    let (no_shares, q) = (o.no_shares, o.q);
     market.scratch_owed = market
         .scratch_owed
         .checked_add(owed)
@@ -71,7 +80,10 @@ pub fn handle_scratch_outcome(ctx: Context<ScratchOutcome>, outcome_id: u16) -> 
         .no_total
         .checked_sub(no_shares)
         .ok_or(SideMarketError::MathOverflow)?;
-    market.outcomes[field].mass_ppm += mass;
+    market.outcomes[field].mass_ppm = market.outcomes[field]
+        .mass_ppm
+        .checked_add(merged_mass)
+        .ok_or(SideMarketError::MathOverflow)?;
     market.live_entries -= 1;
     if market.status == MarketStatus::Halted {
         market.freeze_marks()?;

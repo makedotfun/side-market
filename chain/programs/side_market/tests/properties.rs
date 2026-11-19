@@ -1,7 +1,7 @@
 //! Property tests on the release build: random sequences of YES and NO buys and sales by several
-//! wallets, joins, scratches (of hedged books too: a large gross YES and NO behind a small net q,
-//! each scratch paying both sides from one value), halts and resumes, and warps of the clock
-//! forward through a bounty window, the gap after it, a race window, the stretch before the
+//! wallets, joins, scratches (of hedged books too: a large gross YES and NO behind a small net q;
+//! each scratch pays its YES 0 and its NO 1 a share and never raises the liability), halts and
+//! resumes, and warps of the clock forward through a bounty window, the gap after it, a race window, the stretch before the
 //! deadline and the stretch after it. D6 is checked after every step from the vault's real
 //! balance against a liability the test recomputes from the market's raw fields (common::
 //! liability_of), and no step is ever refused as Insolvent. The trading rule is checked on every
@@ -18,7 +18,8 @@
 //! winning, and a void at the marks. In every one every ticket settles, D6 holds after each
 //! settlement, and the house's realised loss (its deposit less the surplus close_market returns)
 //! is at most ceil(b L), its bound b ln(1/m_floor) (rounding always falls the house's way, so no
-//! rounding allowance is needed).
+//! rounding allowance is needed), scratches included: one at q_k >= 0 lowers C by R, which the
+//! house keeps, and one at q_k < 0 merges k's current weight into FIELD, so C does not move.
 
 mod common;
 mod mainnet;
@@ -78,7 +79,7 @@ enum Op {
     },
     /// A hedged book, then its scratch (the review's F1): on the `pick`-th entry one trader buys
     /// YES sized `frac` / 65535 of 2 b, another buys NO down to a net q of `net`, and the entry
-    /// is scratched. Both sides are paid from one value v.
+    /// is scratched: its YES is paid 0 and its NO 1 a share, whatever the net.
     HedgedScratch {
         pick: u8,
         frac: u16,
@@ -195,29 +196,31 @@ fn never_insolvent(sent: &Sent, what: &str) {
     );
 }
 
-/// A scratched outcome's values come from one v: yes + no = 2^64 (less the u64 cap's one ulp at
-/// v = 0 or 1).
-#[track_caller]
-fn one_value(w: &World, m: &Mkt, id: u16, what: &str) {
-    let market = w.market(m);
-    let o = market.outcomes[market.index_of(id).unwrap()];
-    let sum = u128::from(o.yes_value) + u128::from(o.no_value);
-    assert!(
-        sum <= 1 << 64 && sum >= (1 << 64) - 1,
-        "{what}: yes {} + no {}",
-        o.yes_value,
-        o.no_value
-    );
-}
-
-/// Scratches `id` (refusals allowed, never Insolvent); a scratch that lands pays from one value.
+/// Scratches `id` (refusals allowed, never Insolvent). A scratch that lands pays its YES 0 and its
+/// NO 1 a share (yes_value 0, no_value u64::MAX), F takes exactly its NO shares, and the liability
+/// does not rise.
 fn scratch_checked(w: &mut World, m: &Mkt, id: u16, what: &str, counts: &mut Counts) {
+    let before = w.market(m);
+    let liability = w.assert_d6(m);
     let sent = w.scratch(m, id);
     never_insolvent(&sent, what);
     assert!(sent.ok || sent.code.is_some(), "{what}: {}", sent.error);
     if sent.ok {
         counts.scratches += 1;
-        one_value(w, m, id, what);
+        let after = w.market(m);
+        let k = after.index_of(id).unwrap();
+        let o = after.outcomes[k];
+        assert_eq!(
+            (o.yes_value, o.no_value),
+            (0, u64::MAX),
+            "{what}: YES 0, NO 1"
+        );
+        assert_eq!(
+            after.scratch_owed,
+            before.scratch_owed + before.outcomes[k].no_shares,
+            "{what}: F takes its NO shares"
+        );
+        assert!(w.assert_d6(m) <= liability, "{what}: the liability rose");
     }
 }
 

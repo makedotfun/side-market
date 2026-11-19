@@ -220,12 +220,21 @@ pub fn mint_data(decimals: u8, supply: u64) -> Vec<u8> {
     data
 }
 
+/// floor(shares value / 2^64), and `shares` at u64::MAX (which stands for 2^64).
+pub fn paid_at(shares: u128, value: u64) -> u128 {
+    if value == u64::MAX {
+        shares
+    } else {
+        (shares * u128::from(value)) >> 64
+    }
+}
+
 /// D6's liability recomputed here from a decoded Market's raw fields, independently of the
 /// program's Market::liability():
 /// - Open, Halted, Proposed: F + N + max(0, max q over the live entries and NONE);
 /// - Final: F + N + the winner's q;
 /// - Void: F + over the live outcomes floor(Y yes_value / 2^64) + floor(N_j no_value / 2^64),
-///   with Y = q + N_j.
+///   with Y = q + N_j, a value of u64::MAX paying every share 1 (it stands for 2^64).
 ///
 /// F is scratch_owed, N is no_total; N is also checked to be the sum of the live outcomes' NO
 /// shares, and FIELD (never traded) to hold no shares.
@@ -272,8 +281,8 @@ pub fn liability_of(market: &Market) -> u128 {
             for o in live() {
                 let yes = i128::from(o.q) + i128::from(o.no_shares);
                 let yes = u128::try_from(yes).expect("YES shares are not negative");
-                total += (yes * u128::from(o.yes_value)) >> 64;
-                total += (u128::from(o.no_shares) * u128::from(o.no_value)) >> 64;
+                total += paid_at(yes, o.yes_value);
+                total += paid_at(u128::from(o.no_shares), o.no_value);
             }
             total
         }

@@ -7,8 +7,8 @@ use {
     serde_json::Value,
     side_market::math::{
         cost_delta_lo, fee_of, join, liquidity_for, ln_q64, loss_per_b, marks, open_book,
-        price_ppm, scratch, shares_for_budget, theta_of_ppm, trade, trade_flows, weight_err, Term,
-        Weighted,
+        price_ppm, scratch, scratch_mass_ppm, shares_for_budget, theta_of_ppm, trade, trade_flows,
+        weight_err, Term, Weighted,
     },
 };
 
@@ -73,6 +73,17 @@ fn exp_ln_theta_liquidity_and_fees() {
         )
         .unwrap();
         assert_eq!(u128::from(fee), ubig(&e["fee"]));
+    }
+    let masses = v["scratchMass"].as_array().unwrap();
+    assert!(!masses.is_empty());
+    for e in masses {
+        let got = scratch_mass_ppm(
+            num(&e["massPpm"]) as u32,
+            big(&e["q"]) as i64,
+            ubig(&e["b"]) as u64,
+        )
+        .unwrap();
+        assert_eq!(u64::from(got), num(&e["out"]), "scratch mass {e}");
     }
 }
 
@@ -175,8 +186,6 @@ fn scenarios_replay_to_the_bit() {
                     let s = scratch(&mut terms, index.unwrap(), 1, base, sum, b).unwrap();
                     assert_eq!(s.base, big(&e["base"]), "{at}");
                     assert_eq!(s.sum, ubig(&e["sum"]), "{at}");
-                    assert_eq!(s.r_lo, big(&e["rLo"]), "{at}");
-                    assert_eq!(s.r_hi, big(&e["rHi"]), "{at}");
                     assert_eq!(u128::from(s.yes), ubig(&e["yes"]), "{at}");
                     assert_eq!(u128::from(s.no), ubig(&e["no"]), "{at}");
                     assert_eq!(s.field_theta, big(&e["fieldTheta"]), "{at}");

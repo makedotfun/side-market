@@ -57,7 +57,7 @@ pub struct OutcomeAdded {
     pub sum: u128,
 }
 
-/// scratch_outcome: an entry unwound at the AMM (D7).
+/// scratch_outcome: an entry scratched, settled as one that did not win (D7).
 #[event]
 pub struct OutcomeScratched {
     pub market: Pubkey,
@@ -65,7 +65,7 @@ pub struct OutcomeScratched {
     /// Its net shares and NO shares when scratched.
     pub q: i64,
     pub no_shares: u64,
-    /// What a YES and a NO share are paid (Q0.64).
+    /// What a YES and a NO share are paid (Q0.64): 0 and u64::MAX (1 a share).
     pub yes_value: u64,
     pub no_value: u64,
     /// What it adds to F.

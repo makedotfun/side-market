@@ -14,13 +14,16 @@
 //! the NO shares).
 //!
 //! Before lock_ts (the competition deadline) the operator may scratch an entry replaced, rejected
-//! or withdrawn: it is unwound at the AMM price and its legs are paid fixed values. Buys land
-//! only inside the windows set_windows opens (bounty phase, live race). A position can be closed
-//! whenever the market is open: a sell (a trade that shrinks the position) lands inside a window
-//! and also outside every window, until the moment set_sell_until names (when the result becomes
-//! public; unset, until the market is proposed) and never at or after void_after, so a sell and a
-//! permissionless void never land together. A halted market trades nothing. After the windows
-//! and lock_ts pass the resolver proposes the winner (with a prize escrow's result cross-checked when the market names
+//! or withdrawn (D7): it is settled as an entry that did not win, its YES shares paid 0 and its
+//! NO shares 1 USDC each when the market settles (final or void), whatever anyone traded on it or
+//! on another outcome. FIELD takes it back: its base mass when q_k >= 0 (the book's cost falls),
+//! its current weight when q_k < 0, more NO than YES (no price moves, so the house's guarantee is
+//! intact); the live masses then sum to at most 1,000,000. Buys land only inside the windows
+//! set_windows opens (bounty phase, live race). A position can be closed whenever the market is
+//! open: a sell (a trade that shrinks the position) lands inside a window and also outside every
+//! window, until the moment set_sell_until names (when the result becomes public; unset, until
+//! the market is proposed) and never at or after void_after, so a sell and a permissionless void
+//! never land together. A halted market trades nothing. After the windows and lock_ts pass the resolver proposes the winner (with a prize escrow's result cross-checked when the market names
 //! one); the arbiter may override or void during Config.min_dispute_secs; anyone finalizes after
 //! it, and anyone may void a market still unresolved 14 days after lock_ts. A void pays frozen
 //! marks (YES p, NO 1 - p), never refunds at cost. settle_ticket pays every ticket; close_market
@@ -124,7 +127,9 @@ pub mod side_market {
         instructions::add_outcome::handle_add_outcome(ctx, outcome_id, mass_ppm)
     }
 
-    /// The operator unwinds an entry at the AMM before lock_ts.
+    /// The operator scratches an entry before lock_ts: it cannot win, so its YES shares are paid
+    /// 0 and its NO shares 1 each, and FIELD takes it back (its base mass, or its current weight
+    /// when q < 0).
     pub fn scratch_outcome(ctx: Context<ScratchOutcome>, outcome_id: u16) -> Result<()> {
         instructions::scratch_outcome::handle_scratch_outcome(ctx, outcome_id)
     }
@@ -176,7 +181,8 @@ pub mod side_market {
     }
 
     /// The arbiter voids a market not yet final, or anyone an unresolved one after void_after
-    /// while no window is open: every leg is paid at its frozen mark or scratch value.
+    /// while no window is open: every live leg is paid at its frozen mark, a scratched entry's
+    /// YES 0 and NO 1 a share.
     pub fn void_market(ctx: Context<VoidMarket>) -> Result<()> {
         instructions::void_market::handle_void_market(ctx)
     }

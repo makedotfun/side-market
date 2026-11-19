@@ -120,7 +120,8 @@ fn check_destination<'info>(a: &SettleTicket<'info>) -> Result<()> {
 
 /// D12: permissionless once the market is Final or Void: pays the ticket's wallet every leg's due
 /// (Market::leg_payout: Final pays a share of the winner's YES and of every other outcome's NO 1;
-/// Void pays live legs their frozen marks; scratched legs are paid their scratch values in both)
+/// Void pays live legs their frozen marks; in both, a scratched entry's YES legs are paid 0 and its
+/// NO legs 1 a share)
 /// into a token account it owns (check_destination), takes the legs off the market's totals
 /// (Market::release_leg) and closes the ticket. A payout of 0 moves nothing and creates no
 /// account. D6 is asserted from the vault after the transfer.

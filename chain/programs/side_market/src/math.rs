@@ -659,80 +659,69 @@ pub fn marks(w: u128, sum: u128, n: u32) -> MathResult<(u64, u64)> {
     let hi = ov(w.checked_add(weight_err(w)))?.min(s_lo);
     let (yes, _) = frac_q64(lo, s_hi)?;
     let p_hi = frac_q64_ceil(hi, s_lo)?;
-    Ok((cap_u64(yes), cap_u64(ONE - p_hi)))
+    Ok((value_q64(yes), value_q64(ONE - p_hi)))
 }
 
-fn cap_u64(v: u128) -> u64 {
-    u64::try_from(v).unwrap_or(u64::MAX)
+/// A Q0.64 value in [0, ONE] as the u64 value_of reads: ONE is u64::MAX (VALUE_ONE), and a value
+/// below ONE is held to u64::MAX - 1, so it is never read as ONE.
+pub fn value_q64(v: u128) -> u64 {
+    if v >= ONE {
+        VALUE_ONE
+    } else {
+        u64::try_from(v).unwrap_or(u64::MAX).min(VALUE_ONE - 1)
+    }
 }
 
-/// What `shares` are paid at a Q0.64 value: floor(shares * value / 2^64).
+/// The u64 Q0.64 value that stands for ONE: value_of pays every share 1 base unit at it.
+pub const VALUE_ONE: u64 = u64::MAX;
+
+/// What `shares` are paid at a Q0.64 value: floor(shares * value / 2^64), and `shares` itself at
+/// VALUE_ONE (a u64 cannot hold 2^64, so u64::MAX stands for ONE).
 pub fn value_of(shares: u64, value: u64) -> u64 {
+    if value == VALUE_ONE {
+        return shares;
+    }
     ((u128::from(shares) * u128::from(value)) >> 64) as u64
 }
 
-/// D7: the one scratch value v (Q0.64, in [0, ONE]) of an outcome with net q_k != 0 whose unwind
-/// R = C(q) - C(q - q_k e_k) is at least `r_lo` (Q64.64 base units: R * 2^64 >= r_lo). Both
-/// sides are paid from it, YES v and NO 1 - v, so a ticket holding Y YES and N NO shares is owed
-/// floor(Y v) + floor(N (1 - v)) <= N + v (Y - N) = N + v q_k. v is rounded so that v q_k <= R:
-///
-/// - q_k > 0: v = floor(r_lo / q_k) <= R / q_k (R is the YES side's unwind, in [0, q_k]);
-/// - q_k < 0: v = ceil(|R|_hi / |q_k|), |R|_hi = -r_lo >= |R| (R <= 0: the NO side's unwind).
-///
-/// Summed over every ticket, owed <= R + N_k, which is what the scratch frees in the vault (its
-/// unwind and its NO shares), so D6 holds. The bound r_lo sits a few times b * LN_ERR ulps
-/// below R, so v is within about 2^-30 / |q_k| of R / q_k: a hedged outcome (small net q_k
-/// behind large gross positions) is still paid at its price. v is held to [0, ONE].
-pub fn scratch_value(q_k: i64, r_lo: i128) -> MathResult<u128> {
-    if q_k == 0 {
-        return Err(MathError::Domain);
-    }
-    let qa = u128::from(q_k.unsigned_abs());
-    // q_k * 2^64 <= 2^127: the most R can be, in Q64.64.
-    let top = qa << 64;
-    let held = |r: i128| -> u128 { u128::try_from(r.max(0)).unwrap_or(0).min(top) };
-    if q_k > 0 {
-        Ok(held(r_lo) / qa)
-    } else {
-        let r = held(ov(r_lo.checked_neg())?);
-        Ok(r.div_ceil(qa))
-    }
-}
-
-/// D7's (yes, no) values (Q0.64) from one v: (v, ONE - v), each held to u64 (ONE pays 2^64 - 1
-/// per 2^64, a share short of a base unit only on 2^64 shares).
-pub fn scratch_values_of(v: u128) -> (u64, u64) {
-    let v = v.min(ONE);
-    (cap_u64(v), cap_u64(ONE - v))
-}
-
-/// D7 scratch values of an outcome with net q_k != 0 whose unwind is at least `r_lo` (Q64.64):
-/// scratch_values_of(scratch_value(q_k, r_lo)).
-pub fn scratch_values(q_k: i64, r_lo: i128) -> MathResult<(u64, u64)> {
-    Ok(scratch_values_of(scratch_value(q_k, r_lo)?))
-}
+/// D7: what a YES share on a scratched entry is paid: nothing (the entry cannot win).
+pub const SCRATCH_YES: u64 = 0;
+/// D7: what a NO share on a scratched entry is paid: 1 base unit (VALUE_ONE).
+pub const SCRATCH_NO: u64 = VALUE_ONE;
 
 /// What a scratch did to the book.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Scratch {
     pub base: i128,
     pub sum: u128,
-    /// Bounds on R = C(q) - C(q - q_k e_k), Q64.64 base units (R * 2^64), unrounded.
-    pub r_lo: i128,
-    pub r_hi: i128,
-    /// The scratched outcome's YES and NO values (Q0.64).
+    /// The scratched outcome's YES and NO values (Q0.64): SCRATCH_YES and SCRATCH_NO.
     pub yes: u64,
     pub no: u64,
     /// FIELD's new theta.
     pub field_theta: i128,
 }
 
-/// D7: unwinds the term at k at the AMM (R = C(q) - C(q - q_k e_k), bracketed in Q64.64), pays
-/// both sides from one value v (scratch_value: about R / q_k; the price w_k / sum when q_k is 0),
-/// YES v and NO ONE - v, takes it out of the book and returns its mass to FIELD (at `field`):
-/// FIELD's theta becomes ln(lo(e^theta_F) + lo(e^theta_k)) - LN_ERR, so the book never weighs
-/// more than the unwound one. k's q is left as it was (it is out of the book, so nothing prices
-/// it).
+/// D7: a scratched entry loses. Its YES shares are paid SCRATCH_YES (0) and its NO shares
+/// SCRATCH_NO (1 each), fixed by side and share count alone: no trade, on this outcome or
+/// another, before or after, moves what a position on it is paid. A ticket holding Y YES and N
+/// NO shares on it is owed N, so the scratch owes N_k, exactly what it takes off N, and the
+/// max-q term loses k: D6's liability never rises. The term at k leaves the book and FIELD (at
+/// `field`, never traded, so its exponent is its theta) absorbs it by the sign of k's q:
+///
+/// - q_k >= 0: k's base mass. FIELD's theta becomes ln(lo(e^theta_F) + lo(e^theta_k)) - LN_ERR:
+///   the book's cost falls by R >= 0, which the house keeps, and the other prices rise.
+/// - q_k < 0: k's current weight. FIELD's theta becomes ln(lo(e^theta_F) + lo(e^x_k)) - LN_ERR
+///   with x_k = x_of(theta_k, q_k, b), the exponent the book prices k at: the same weight the
+///   book held for the two, so the sum, C and every other price stay put (within the rounding
+///   that keeps C from rising). Paying k's NO holders 1 each while its base mass merged would
+///   raise C by |R| and spend that much of the house's guarantee, and D6 would then refuse later
+///   buys on a low-mass outcome.
+///
+/// Either way FIELD never weighs more than it and k did together. Both are computed from the
+/// absolute exponents (the frame base = 0), not the cached weights: x_F and x_k are at most 0,
+/// so neither can overflow, and FIELD's weight (at least about m_floor) keeps its full precision
+/// however far the book's base has run. scratch_mass_ppm is what FIELD's mass_ppm takes. k's q is
+/// left as it was (it is out of the book, so nothing prices it).
 pub fn scratch<T: Weighted>(
     terms: &mut [T],
     k: usize,
@@ -744,49 +733,53 @@ pub fn scratch<T: Weighted>(
     if k == field {
         return Err(MathError::Domain);
     }
-    let n = book_len(terms);
-    let (q_k, theta_k, w_k) = {
+    let x_k = {
         let t = terms.get(k).ok_or(MathError::Domain)?;
         if !t.in_book() {
             return Err(MathError::Domain);
         }
-        (t.q(), t.theta(), t.w())
+        if t.q() < 0 {
+            x_of(t.theta(), t.q(), b)?
+        } else {
+            t.theta()
+        }
     };
     let theta_f = terms.get(field).ok_or(MathError::Domain)?.theta();
-    // q_k = 0: v = p_k (any v in [0, 1] owes floor(Y v) + floor(Y (1 - v)) <= Y = N_k).
-    let at_price = if q_k == 0 {
-        Some(frac_q64(w_k.min(sum), sum)?.0)
-    } else {
-        None
-    };
-    terms[k].set_q(0);
-    let (base2, sum2) = refresh(terms, &[k], base, sum, b)?;
-    let r_lo = ov(cost_delta_hi_q64(b, base, sum, base2, sum2, n)?.checked_neg())?;
-    let r_hi = ov(cost_delta_lo_q64(b, base, sum, base2, sum2, n)?.checked_neg())?;
-    let v = match at_price {
-        Some(p) => p,
-        None => scratch_value(q_k, r_lo)?,
-    };
-    let (yes, no) = scratch_values_of(v);
     let ef = exp_q64(theta_f)?;
-    let ek = exp_q64(theta_k)?;
+    let ek = exp_q64(x_k)?;
     let merged = ov(ef
         .saturating_sub(weight_err(ef))
         .checked_add(ek.saturating_sub(weight_err(ek))))?;
     let field_theta = ln_q64(merged)? - LN_ERR;
     terms[field].set_theta(field_theta);
     terms[k].leave_book();
-    let (base3, sum3) = refresh(terms, &[k, field], base2, sum2, b)?;
-    terms[k].set_q(q_k);
+    let (base, sum) = refresh(terms, &[k, field], base, sum, b)?;
     Ok(Scratch {
-        base: base3,
-        sum: sum3,
-        r_lo,
-        r_hi,
-        yes,
-        no,
+        base,
+        sum,
+        yes: SCRATCH_YES,
+        no: SCRATCH_NO,
         field_theta,
     })
+}
+
+/// What a scratch of an entry with `mass_ppm` and net quantity `q` adds to FIELD's mass_ppm (the
+/// mass scratch merged): `mass_ppm` itself when q >= 0, and when q < 0 floor(mass_ppm *
+/// lo(e^(q/b))), lo(e) = e - weight_err(e) for e = exp_q64(floor(q * 2^64 / b)), rounded down so
+/// FIELD's mass never claims more than the weight it took (k's theta is itself at or below its
+/// mass). The live masses then sum to at most 1,000,000.
+pub fn scratch_mass_ppm(mass_ppm: u32, q: i64, b: u64) -> MathResult<u32> {
+    if u64::from(mass_ppm) > PPM {
+        return Err(MathError::Domain);
+    }
+    if q >= 0 {
+        return Ok(mass_ppm);
+    }
+    let e = exp_q64(x_of(0, q, b)?)?;
+    let lo = e.saturating_sub(weight_err(e));
+    // lo < 2^64 and mass_ppm <= 1e6 < 2^20: the product fits, and the result is at most mass_ppm.
+    let m = (u128::from(mass_ppm) * lo) >> 64;
+    u32::try_from(m).map_err(|_| MathError::Overflow)
 }
 
 // ------------------------------------------------------------------------------ USDC to shares
@@ -974,86 +967,101 @@ mod tests {
     }
 
     #[test]
-    fn a_hedged_scratch_pays_both_sides_at_one_value_and_holds_d6() {
+    fn a_scratch_pays_yes_nothing_and_no_one_whatever_the_book() {
         for q in [
             0i64, 1, -1, 3, -3, 100, -100, 1_000_000, -1_000_000, 50_000_000,
         ] {
             let (mut terms, base, sum, b, y, n) = hedged(q);
-            let w = terms[2].w;
-            let (p, _) = frac_q64(w.min(sum), sum).unwrap();
+            let (theta_f, theta_k) = (terms[1].theta, terms[2].theta);
+            let before = terms.clone();
             let s = scratch(&mut terms, 2, 1, base, sum, b).unwrap();
-            let (yes, no) = (u128::from(s.yes), u128::from(s.no));
-            // One v: yes + no = ONE (less the u64 cap's one ulp at an end).
-            assert!(
-                yes + no <= ONE && yes + no >= ONE - 1,
-                "q {q}: {yes} + {no}"
-            );
-            let paid_yes = value_of(y as u64, s.yes);
-            let paid_no = value_of(n as u64, s.no);
-            let owed = i128::from(paid_yes) + i128::from(paid_no);
-            if q == 0 {
-                assert_eq!(yes, p, "q 0 pays the price");
-                assert!(owed <= i128::from(n));
-                continue;
+            assert_eq!((s.yes, s.no), (SCRATCH_YES, SCRATCH_NO), "q {q}");
+            assert_eq!(value_of(y as u64, s.yes), 0, "q {q}: YES paid");
+            assert_eq!(value_of(n as u64, s.no), n as u64, "q {q}: NO paid 1 each");
+            // k left the book with its q kept; the cached sum is exact.
+            assert!(!terms[2].in_book && terms[2].w == 0 && terms[2].q == q);
+            assert_eq!(s.sum, terms.iter().map(|t| t.w).sum::<u128>(), "q {q}: sum");
+            assert_eq!(terms[1].theta, s.field_theta);
+            // FIELD never weighs more than it and k did together: k's base mass when q >= 0, its
+            // current weight e^(x_k) when q < 0.
+            let x_k = if q < 0 {
+                x_of(theta_k, q, b).unwrap()
+            } else {
+                theta_k
+            };
+            let (ef, ek) = (exp_q64(theta_f).unwrap(), exp_q64(x_k).unwrap());
+            let merged = exp_q64(s.field_theta).unwrap();
+            assert!(merged <= ef + ek, "q {q}: FIELD {merged} > {ef} + {ek}");
+            assert!(merged + (1 << 20) >= ef + ek, "q {q}: FIELD lost mass");
+            if q < 0 {
+                // No other price moves: NONE's weight against the sum, before and after.
+                let p0 = frac_q64(before[0].w, sum).unwrap().0;
+                let p1 = frac_q64(terms[0].w, s.sum).unwrap().0;
+                assert!(p0.abs_diff(p1) <= 1 << 12, "q {q}: NONE's price moved");
             }
-            // R is bracketed in Q64.64, under 2^-28 base units wide.
-            assert!(
-                s.r_lo <= s.r_hi && s.r_hi - s.r_lo < 1 << 36,
-                "q {q}: width"
-            );
-            // D6: owed <= R + N_k, with R >= r_lo.
-            assert!(
-                owed << 64 <= (i128::from(n) << 64) + s.r_lo,
-                "q {q}: owed {owed} > N {n} + R {}",
-                s.r_lo
-            );
-            // Each side within one base unit of its true value Y R / q and N (1 - R / q).
-            let qq = i128::from(q);
-            let (a, c) = (s.r_lo / qq, s.r_hi / qq);
-            let (lo_v, hi_v) = (a.min(c) - 1, a.max(c) + 1);
-            let (yy, nn) = (i128::from(y), i128::from(n));
-            let paid_yes = i128::from(paid_yes);
-            let paid_no = i128::from(paid_no);
-            assert!(
-                paid_yes >= ((yy * lo_v) >> 64) - 1 && paid_yes <= ((yy * hi_v) >> 64) + 1,
-                "q {q}: YES paid {paid_yes}"
-            );
-            assert!(
-                paid_no >= ((nn * (ONE_I - hi_v)) >> 64) - 1
-                    && paid_no <= ((nn * (ONE_I - lo_v)) >> 64) + 1,
-                "q {q}: NO paid {paid_no}"
-            );
-            // A small net is paid at about the price before the scratch.
-            if qq.abs() <= 100 {
-                let tol = (qq.unsigned_abs() << 64) / u128::from(b) + (1 << 36);
-                assert!(yes.abs_diff(p) <= tol, "q {q}: v {yes} vs p {p}");
-            }
+            // The book trades on after it.
+            let (_, s2, _) = trade(&mut terms, 0, 1_000_000, s.base, s.sum, b).unwrap();
+            assert_eq!(s2, terms.iter().map(|t| t.w).sum::<u128>());
         }
-        // The reviewer's case: q_k = 3 paid both sides nothing; now each about 50 USDC.
-        let (mut terms, base, sum, b, y, n) = hedged(3);
-        let s = scratch(&mut terms, 2, 1, base, sum, b).unwrap();
-        assert!(value_of(y as u64, s.yes) >= 49_990_000);
-        assert!(value_of(n as u64, s.no) >= 49_990_000);
     }
 
     #[test]
-    fn scratch_value_rounds_toward_the_house_and_holds_to_one() {
-        // q > 0: floor(r_lo / q); q < 0: ceil(-r_lo / |q|).
-        assert_eq!(scratch_value(3, 10), Ok(3));
-        assert_eq!(scratch_value(-3, -10), Ok(4));
-        // Bounds past [0, |q|] are held there.
-        assert_eq!(scratch_value(5, -7), Ok(0));
-        assert_eq!(scratch_value(5, 6i128 << 64), Ok(ONE));
-        assert_eq!(scratch_value(-5, 7), Ok(0));
-        assert_eq!(scratch_value(-5, -(6i128 << 64)), Ok(ONE));
-        assert_eq!(scratch_value(i64::MIN, i128::MIN + 1), Ok(ONE));
-        assert_eq!(scratch_value(i64::MIN, i128::MIN), Err(MathError::Overflow));
-        assert_eq!(scratch_value(0, 1), Err(MathError::Domain));
-        assert_eq!(scratch_values_of(0), (0, u64::MAX));
-        assert_eq!(scratch_values_of(ONE), (u64::MAX, 0));
+    fn a_scratch_gives_field_the_mass_it_merged() {
+        let (b, _) = liquidity_for(50_000_000, 5_000).unwrap();
+        for q in [0i64, 1, 50_000_000] {
+            assert_eq!(scratch_mass_ppm(50_000, q, b), Ok(50_000));
+        }
+        // floor(mass e^(q/b)), never above the real value.
+        let one_b = -(b as i64);
+        let got = scratch_mass_ppm(50_000, one_b, b).unwrap();
+        assert_eq!(got, 18_393, "50,000 e^-1 = 18,393.97");
+        assert_eq!(scratch_mass_ppm(5_000, -1, b), Ok(4_999));
+        assert_eq!(scratch_mass_ppm(1_000_000, -(b as i64) * 60, b), Ok(0));
+        assert_eq!(scratch_mass_ppm(1_000_001, 0, b), Err(MathError::Domain));
+        assert_eq!(scratch_mass_ppm(1_000_000, i64::MIN, MIN_B), Ok(0));
+    }
+
+    #[test]
+    fn a_scratch_refuses_field_and_an_outcome_out_of_the_book() {
+        let (mut terms, base, sum, b, _, _) = hedged(5);
         assert_eq!(
-            scratch_values_of(ONE / 4),
-            ((ONE / 4) as u64, (3 * ONE / 4) as u64)
+            scratch(&mut terms, 1, 1, base, sum, b),
+            Err(MathError::Domain)
         );
+        let s = scratch(&mut terms, 2, 1, base, sum, b).unwrap();
+        assert_eq!(
+            scratch(&mut terms, 2, 1, s.base, s.sum, b),
+            Err(MathError::Domain)
+        );
+        assert_eq!(
+            scratch(&mut terms, 9, 1, s.base, s.sum, b),
+            Err(MathError::Domain)
+        );
+    }
+
+    #[test]
+    fn value_one_pays_every_share_and_no_other_value_reads_as_one() {
+        assert_eq!(value_of(70_000_000, VALUE_ONE), 70_000_000);
+        assert_eq!(value_of(u64::MAX, VALUE_ONE), u64::MAX);
+        assert_eq!(value_of(1, VALUE_ONE), 1);
+        assert_eq!(value_of(0, VALUE_ONE), 0);
+        assert_eq!(value_of(70_000_000, SCRATCH_YES), 0);
+        assert_eq!(value_of(4, (ONE / 4) as u64), 1);
+        assert_eq!(value_of(3, VALUE_ONE - 1), 2);
+        assert_eq!(value_q64(ONE), VALUE_ONE);
+        assert_eq!(value_q64(ONE + 5), VALUE_ONE);
+        assert_eq!(value_q64(ONE - 1), VALUE_ONE - 1);
+        assert_eq!(value_q64(ONE / 4), (ONE / 4) as u64);
+        assert_eq!(value_q64(0), 0);
+        // A mark is never read as ONE unless the bound is ONE itself.
+        let (b, _) = liquidity_for(50_000_000, 5_000).unwrap();
+        let mut terms = vec![
+            Term::new(theta_of_ppm(100_000).unwrap()),
+            Term::new(theta_of_ppm(900_000).unwrap()),
+        ];
+        let (_, sum) = open_book(&mut terms, b).unwrap();
+        let (yes, no) = marks(terms[0].w, sum, 2).unwrap();
+        assert!(yes < VALUE_ONE && no < VALUE_ONE);
+        assert!(u128::from(yes) + u128::from(no) <= ONE);
     }
 }

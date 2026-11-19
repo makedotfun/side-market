@@ -1193,7 +1193,9 @@
     {
       "name": "scratch_outcome",
       "docs": [
-        "The operator unwinds an entry at the AMM before lock_ts."
+        "The operator scratches an entry before lock_ts: it cannot win, so its YES shares are paid",
+        "0 and its NO shares 1 each, and FIELD takes it back (its base mass, or its current weight",
+        "when q < 0)."
       ],
       "discriminator": [
         201,
@@ -1973,7 +1975,8 @@
       "name": "void_market",
       "docs": [
         "The arbiter voids a market not yet final, or anyone an unresolved one after void_after",
-        "while no window is open: every leg is paid at its frozen mark or scratch value."
+        "while no window is open: every live leg is paid at its frozen mark, a scratched entry's",
+        "YES 0 and NO 1 a share."
       ],
       "discriminator": [
         243,
@@ -3321,14 +3324,17 @@
           {
             "name": "mass_ppm",
             "docs": [
-              "Its mass in ppm: masses of the live outcomes sum to 1,000,000 exactly."
+              "Its mass in ppm: masses of the live outcomes sum to at most 1,000,000 (exactly, until an",
+              "entry with q < 0 is scratched: FIELD then takes only the part of its mass its weight still",
+              "held, math::scratch_mass_ppm)."
             ],
             "type": "u32"
           },
           {
             "name": "theta",
             "docs": [
-              "ln of its mass as Q64.64, rounded so C never rises (math::theta_of_ppm, math::join)."
+              "ln of its mass as Q64.64, rounded so C never rises (math::theta_of_ppm, math::join,",
+              "math::scratch: FIELD's is ln of the weight it holds)."
             ],
             "type": "i128"
           },
@@ -3357,14 +3363,15 @@
           {
             "name": "yes_value",
             "docs": [
-              "A scratched outcome's YES value, or a live one's frozen YES mark (halt, void): Q0.64."
+              "A scratched outcome's YES value (0), or a live one's frozen YES mark (halt, void): Q0.64,",
+              "u64::MAX standing for 1 (math::value_of)."
             ],
             "type": "u64"
           },
           {
             "name": "no_value",
             "docs": [
-              "The NO counterpart of yes_value: Q0.64."
+              "The NO counterpart of yes_value: Q0.64 (u64::MAX, 1, for a scratched outcome)."
             ],
             "type": "u64"
           }
@@ -3437,7 +3444,7 @@
     {
       "name": "OutcomeScratched",
       "docs": [
-        "scratch_outcome: an entry unwound at the AMM (D7)."
+        "scratch_outcome: an entry scratched, settled as one that did not win (D7)."
       ],
       "type": {
         "kind": "struct",
@@ -3464,7 +3471,7 @@
           {
             "name": "yes_value",
             "docs": [
-              "What a YES and a NO share are paid (Q0.64)."
+              "What a YES and a NO share are paid (Q0.64): 0 and u64::MAX (1 a share)."
             ],
             "type": "u64"
           },
@@ -3900,10 +3907,10 @@
       "name": "MAX_OUTCOMES",
       "docs": [
         "The most outcomes a market ever holds, NONE, FIELD and scratched entries included (a scratched",
-        "entry keeps its slot: its values pay its legs at settlement): 64 live entries and 30 scratched",
-        "ones. Bounded by the program's 32 KiB heap: Borsh reads a Vec of 96 Outcomes (80 bytes each in",
-        "memory) in two allocations (51, then 102 slots: 12.2 KiB), and a Ticket's 95 legs in one, so the",
-        "largest trade's market, ticket and book stay well inside it."
+        "entry keeps its slot: its legs are paid YES 0, NO 1 at settlement): 64 live entries and 30",
+        "scratched ones. Bounded by the program's 32 KiB heap: Borsh reads a Vec of 96 Outcomes (80",
+        "bytes each in memory) in two allocations (51, then 102 slots: 12.2 KiB), and a Ticket's 95",
+        "legs in one, so the largest trade's market, ticket and book stay well inside it."
       ],
       "type": "u16",
       "value": "96"

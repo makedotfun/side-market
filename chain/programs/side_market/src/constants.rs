@@ -42,10 +42,10 @@ pub const FIRST_ENTRY_ID: u16 = 2;
 pub const MAX_LIVE_ENTRIES: u16 = 64;
 
 /// The most outcomes a market ever holds, NONE, FIELD and scratched entries included (a scratched
-/// entry keeps its slot: its values pay its legs at settlement): 64 live entries and 30 scratched
-/// ones. Bounded by the program's 32 KiB heap: Borsh reads a Vec of 96 Outcomes (80 bytes each in
-/// memory) in two allocations (51, then 102 slots: 12.2 KiB), and a Ticket's 95 legs in one, so the
-/// largest trade's market, ticket and book stay well inside it.
+/// entry keeps its slot: its legs are paid YES 0, NO 1 at settlement): 64 live entries and 30
+/// scratched ones. Bounded by the program's 32 KiB heap: Borsh reads a Vec of 96 Outcomes (80
+/// bytes each in memory) in two allocations (51, then 102 slots: 12.2 KiB), and a Ticket's 95
+/// legs in one, so the largest trade's market, ticket and book stay well inside it.
 #[constant]
 pub const MAX_OUTCOMES: u16 = 96;
 

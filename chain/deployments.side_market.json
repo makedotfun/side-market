@@ -3,8 +3,8 @@
   "devnet": {
     "programId": "D5Th7ozaTzvj4v5GMrLkMH6sef3hmZAqmrNAugmLsGiH",
     "build": "release",
-    "programSha256": "e01a92ba7ddde58a29b689d2a8ce36d0c44f566f42f332109605cc2e0e7076fe",
-    "executableHash": "8caad77074d8c015cf0cf243088ae9137f64ddf6233e05e33e837a1ba50c525a",
+    "programSha256": "c7d536e0ffb93f734ac332e5de0c137d3d109b6dfe9171a76d3a24d20803324b",
+    "executableHash": "c6948fb6db6a6972195dde0c6d49511ac2597986efc3c93ed134a9bacf89bbc5",
     "upgradeAuthority": "9LDrDGKnTTQsGz1aBB37VuqaiYY3zs4YsQbcoPF1uAq6",
     "governance": "squads",
     "config": "ENTykRf4wukUXmJECRAhCCzqKJ16wiLAnmWP8zaxsKd5",
@@ -34,8 +34,8 @@
   "mainnet": {
     "programId": "D5Th7ozaTzvj4v5GMrLkMH6sef3hmZAqmrNAugmLsGiH",
     "build": "release",
-    "programSha256": "e01a92ba7ddde58a29b689d2a8ce36d0c44f566f42f332109605cc2e0e7076fe",
-    "executableHash": "8caad77074d8c015cf0cf243088ae9137f64ddf6233e05e33e837a1ba50c525a",
+    "programSha256": "c7d536e0ffb93f734ac332e5de0c137d3d109b6dfe9171a76d3a24d20803324b",
+    "executableHash": "c6948fb6db6a6972195dde0c6d49511ac2597986efc3c93ed134a9bacf89bbc5",
     "upgradeAuthority": "2oyHAoA7m7owTCxTdrUrZe2zkGU7R7a1jwhRnhpJPiGw",
     "governance": "single-key",
     "config": "ENTykRf4wukUXmJECRAhCCzqKJ16wiLAnmWP8zaxsKd5",

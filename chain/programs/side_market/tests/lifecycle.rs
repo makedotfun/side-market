@@ -635,7 +635,7 @@ fn halt_and_resume() {
 }
 
 #[test]
-fn scratch_unwinds_at_the_amm_and_pays_fixed_values() {
+fn scratch_settles_the_entry_as_lost_yes_nothing_and_no_one() {
     let mut w = World::new();
     let m = market3(&mut w, 11);
     let yes = trader(&mut w, &m, 1_000 * USDC);
@@ -661,7 +661,19 @@ fn scratch_unwinds_at_the_amm_and_pays_fixed_values() {
     );
 
     let field_before = w.market(&m).outcomes[1].mass_ppm;
-    // E1: q > 0. E2: q < 0.
+    // E1: q > 0, so FIELD takes its whole 200,000. E2: q < 0, so FIELD takes the part of its
+    // 150,000 its weight still held, floor(150,000 e^(q/b)).
+    let e2_back = {
+        let market = w.market(&m);
+        let o = market.outcomes[market.index_of(E2).unwrap()];
+        assert_eq!(o.q, -(8 * USDC as i64));
+        math::scratch_mass_ppm(o.mass_ppm, o.q, market.b).unwrap()
+    };
+    // 150,000 e^(-8 / 9.437) = 64,257.
+    assert!(
+        (60_000..70_000).contains(&e2_back),
+        "E2 gives back {e2_back}"
+    );
     expect_ok(w.scratch(&m, E1), "scratch E1");
     expect_ok(w.scratch(&m, E2), "scratch E2");
     let market = w.market(&m);
@@ -670,12 +682,14 @@ fn scratch_unwinds_at_the_amm_and_pays_fixed_values() {
     assert_eq!(e1.status, OutcomeStatus::Scratched);
     assert_eq!(
         market.outcomes[1].mass_ppm,
-        field_before + 200_000 + 150_000
+        field_before + 200_000 + e2_back
     );
     assert_eq!(market.no_total, 0, "NO on scratched outcomes left N");
-    assert!(market.scratch_owed > 0);
-    assert!(e1.yes_value > 0 && e1.no_value > 0);
-    assert!(e2.yes_value > 0 && e2.no_value > 0);
+    // F holds exactly the scratched NO shares, 1 base unit each.
+    assert_eq!(market.scratch_owed, 13 * USDC);
+    for o in [e1, e2] {
+        assert_eq!((o.yes_value, o.no_value), (0, u64::MAX));
+    }
     assert_eq!(market.live_entries, 1);
     w.assert_d6(&m);
     expect_code(
@@ -697,24 +711,20 @@ fn scratch_unwinds_at_the_amm_and_pays_fixed_values() {
         "after lock",
     );
 
-    // E3 wins: the scratched legs are paid their values, E3's YES its shares.
+    // E3 wins: the scratched YES is paid 0, the scratched NO 1 a share, E3's YES its shares.
     expect_ok(w.propose(&m, E3), "propose");
     w.set_time(LOCK + DISPUTE);
     expect_ok(w.as_operator(w.finalize_ix(&m)), "finalize");
-    let owed = w.market(&m).scratch_owed;
     let got_yes = w.settle(&m, yes.key.pubkey());
     let got_no = w.settle(&m, no.key.pubkey());
-    let want_yes = math::value_of(20 * USDC, e1.yes_value) + 4 * USDC;
-    let want_no = math::value_of(5 * USDC, e1.no_value) + math::value_of(8 * USDC, e2.no_value);
-    assert_eq!(got_yes, want_yes);
-    assert_eq!(got_no, want_no);
-    let dust = w.market(&m).scratch_owed;
-    assert!(dust <= 4, "F left {dust} of {owed}");
+    assert_eq!(got_yes, 4 * USDC);
+    assert_eq!(got_no, 13 * USDC);
+    assert_eq!(w.market(&m).scratch_owed, 0, "F is paid out exactly");
     w.assert_d6(&m);
 }
 
 #[test]
-fn a_scratch_with_no_net_position_pays_its_marks() {
+fn a_scratch_with_no_net_position_pays_yes_nothing_and_no_one() {
     let mut w = World::new();
     let m = market3(&mut w, 12);
     let a = trader(&mut w, &m, 1_000 * USDC);
@@ -722,16 +732,12 @@ fn a_scratch_with_no_net_position_pays_its_marks() {
     expect_ok(w.trade(&m, &a, E2, 6 * USDC as i64), "YES");
     expect_ok(w.trade(&m, &b, E2, -(6 * USDC as i64)), "NO");
     assert_eq!(w.market(&m).outcomes[3].q, 0);
+    let before = w.assert_d6(&m);
     expect_ok(w.scratch(&m, E2), "scratch at q = 0");
     let o = w.market(&m).outcomes[3];
-    let sum = u128::from(o.yes_value) + u128::from(o.no_value);
-    assert!(
-        sum <= 1 << 64 && sum > (1 << 64) - 1_000_000,
-        "marks {} + {}",
-        o.yes_value,
-        o.no_value
-    );
-    w.assert_d6(&m);
+    assert_eq!((o.yes_value, o.no_value), (0, u64::MAX));
+    assert_eq!(w.market(&m).scratch_owed, 6 * USDC);
+    assert!(w.assert_d6(&m) <= before);
 }
 
 #[test]
